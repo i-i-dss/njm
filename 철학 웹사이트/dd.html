@@ -45,29 +45,40 @@
         }
 
         /* Ellipse Styles (Decorative circles) */
-        .ellipse-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 0.5rem;
+       .ellipse-radio {
+         display: none;
+        }
+        
+        .ellipse-wrapper {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-top: 0.5rem;
         }
         
         .ellipse {
-            border-radius: 50%;
-            background-color: #D9D9D9;
+          border-radius: 50%;
+          background-color: #D9D9D9;
+          transition: background-color 0.2s, transform 0.2s;
+          cursor: pointer;
         }
-
+        
         .ellipse-big {
-            width: 34px;
-            height: 34px;
+          width: 34px;
+          height: 34px;
         }
-
+        
         .ellipse-small {
-            width: 24px;
-            height: 24px;
+          width: 24px;
+          height: 24px;
         }
-
-        /* Next Button */
+        
+        .ellipse.selected {
+          background-color: #4F46E5; /* 보라색 */
+          transform: scale(1.2);
+        }
+        
+                /* Next Button */
         .next-button {
             background-color: #FFFFFF;
             border-radius: 50px;
