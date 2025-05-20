@@ -1,5 +1,62 @@
+const html2canvasScript = document.createElement('script');
+html2canvasScript.src = "https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js";
+document.head.appendChild(html2canvasScript);
+
 let currentPage = 0;
 const questionsPerPage = 10;
+
+// OS 기본 공유 기능 (Web Share API)과 데스크탑 링크 복사 기능
+function shareToOS() {
+  const shareUrl = window.location.href;  // 현재 페이지 URL
+  const shareText = "내 철학 테스트 결과! 확인해보세요: " + shareUrl;
+
+  // 모바일에서만 Web Share API 동작 (모바일 기기인지 확인)
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+  if (isMobile) {
+    // 모바일 기기에서 Web Share API 사용
+    if (navigator.share) {
+      navigator.share({
+        title: '철학 테스트 결과',
+        text: shareText,
+        url: shareUrl
+      }).then(() => {
+        // 공유 성공
+      }).catch((error) => {
+        alert('공유에 실패했습니다: ' + error);
+      });
+    } else {
+      alert('이 브라우저는 공유 기능을 지원하지 않습니다.');
+    }
+  } else {
+    // 데스크탑에서는 링크 복사
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(shareUrl).then(() => {
+        alert('링크가 복사되었습니다! 다른 사람에게 공유하세요.');
+      }).catch((error) => {
+        alert('링크 복사 실패: ' + error);
+      });
+    } else {
+      // Clipboard API를 지원하지 않는 경우 대체 방법-document.execCommand('copy')
+      const textArea = document.createElement('textarea');
+      textArea.value = shareUrl;
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+          alert('링크가 복사되었습니다! 다른 사람에게 공유하세요.');
+        } else {
+          alert('링크 복사에 실패했습니다. 수동으로 복사해주세요.');
+        }
+      } catch (err) {
+        alert('링크 복사에 실패했습니다. 수동으로 복사해주세요.');
+      }
+      document.body.removeChild(textArea);
+    }
+  }
+}
 
 // 점수부여
 function calculateResult() {
@@ -11,7 +68,9 @@ function calculateResult() {
     const value = answers[i];
     if (value === undefined) {
       alert(`${i + 1}번 질문에 응답해주세요.`);
-      document.querySelector(`input[name='q${i}']`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+      setTimeout(() => {
+        document.querySelector(`input[name='q${i}']`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 0);
       return;
     }
 
@@ -46,7 +105,12 @@ function calculateResult() {
     .join("");
 
   document.body.innerHTML = `
-    <div id="result" class="text-center p-6 max-w-2xl mx-auto bg-white rounded shadow"></div>
+    <div id="resultContainer" class="text-center p-6 max-w-2xl mx-auto bg-white rounded shadow">
+      <div id="captureArea">
+        <div id="result" class="mb-8"></div>
+        <div id="resultProfile"></div>
+      </div>
+    </div>
   `;
   renderResult(resultCode, scores);
 }
@@ -82,6 +146,8 @@ function renderQuestions() {
         매우 아니다
       </label>
     `;
+    // Always keep background white (remove gray background logic)
+    el.style.backgroundColor = "#ffffff";
     container.appendChild(el);
   }
 
@@ -98,15 +164,27 @@ function renderQuestions() {
     const nextButton = document.createElement("button");
     nextButton.textContent = "다음 →";
     nextButton.onclick = () => {
+      let hasUnanswered = false;
       for (let i = start; i < end; i++) {
         if (answers[i] === undefined) {
-          alert(`${i + 1}번 질문에 응답해주세요.`);
-          document.querySelector(`input[name='q${i}']`)?.scrollIntoView({ behavior: "smooth", block: "center" });
-          return;
+          // Apply gray background to unanswered question
+          const el = document.querySelector(`#question-container > div:nth-child(${i - start + 1})`);
+          if (el) {
+            el.style.backgroundColor = "#d3d3d3";
+          }
+          if (!hasUnanswered) {
+            alert(`${i + 1}번 질문에 응답해주세요.`);
+            document.querySelector(`input[name='q${i}']`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+            hasUnanswered = true;
+          }
         }
+      }
+      if (hasUnanswered) {
+        return;
       }
       currentPage++;
       renderQuestions();
+      window.scrollTo({ top: 0, behavior: "smooth" });
     };
     nextButton.className = "bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded";
     buttonContainer.appendChild(nextButton);
@@ -114,7 +192,6 @@ function renderQuestions() {
 
   container.appendChild(buttonContainer);
 }
-
 
 // 결과화면
 function renderResult(code, rawScores) {
@@ -154,8 +231,8 @@ function renderResult(code, rawScores) {
       resultHTML += `
         <div class="mb-6">
           <div class="flex justify-between text-sm font-semibold mb-1">
-            <span class="text-blue-600">${pair[0]} ${desc.split(" vs ")[0]} ${percentA}%</span>
-            <span class="text-red-500">${pair[1]} ${desc.split(" vs ")[1]} ${percentB}%</span>
+            <span class="text-blue-600">${pair[0]} ${desc.split(" vs ")[0]}: ${percentA}%</span>
+            <span class="text-red-500">${pair[1]} ${desc.split(" vs ")[1]}: ${percentB}%</span>
           </div>
           <div class="w-full h-3 bg-gray-200 rounded overflow-hidden flex">
             <div class="bg-blue-400" style="width: ${percentA}%"></div>
@@ -168,12 +245,50 @@ function renderResult(code, rawScores) {
   });
 
   resultHTML += "</div></div>";
+
+  document.getElementById("result").innerHTML = resultHTML;
+
   if (result.profile) {
-    resultHTML += `
+    document.getElementById("resultProfile").innerHTML = `
       <div class="mt-8 border-t pt-6 text-left space-y-4 text-sm leading-relaxed">
         ${result.profile}
       </div>
     `;
   }
-  document.getElementById("result").innerHTML = resultHTML;
+
+  // 결과 화면에 버튼 추가
+  const buttonsHTML = `
+    <div class="mt-6">
+      <button id="retryBtn" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded">다시 하기</button>
+      <button id="saveResultBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded ml-4">결과 저장</button>
+    </div>
+    <div class="share-buttons mt-6">
+      <button onclick="shareToOS()" class="share-button bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded ml-4">링크 공유/복사</button>
+    </div>
+  `;
+
+  document.getElementById("resultContainer").insertAdjacentHTML('beforeend', buttonsHTML);
+
+  // "다시 하기" 버튼 클릭 시
+  document.getElementById('retryBtn').addEventListener('click', function () {
+    // 테스트를 처음부터 다시 시작 (페이지 새로고침)
+    window.location.reload();
+  });
+
+  // "결과 저장" 버튼 클릭 시
+  document.getElementById('saveResultBtn').addEventListener('click', function () {
+    const target = document.getElementById('captureArea');
+    if (!target) return alert('저장할 결과가 없습니다.');
+
+    html2canvas(target, { scale: 2 }).then(canvas => {
+      const link = document.createElement('a');
+      link.href = canvas.toDataURL('image/png');
+      link.download = 'philosophy_result.png';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }).catch(err => {
+      alert('이미지 저장 실패: ' + err);
+    });
+  });
 }
