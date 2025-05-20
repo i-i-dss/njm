@@ -1,5 +1,5 @@
 const html2canvasScript = document.createElement('script');
-html2canvasScript.src = "https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js";
+html2canvasScript.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.4.1/html2canvas.min.js";
 document.head.appendChild(html2canvasScript);
 
 let currentPage = 0;
@@ -125,28 +125,7 @@ function renderQuestions() {
 
   for (let i = start; i < end; i++) {
     const q = questions[i];
-    const el = document.createElement("div");
-    el.className = "mb-4 p-4 bg-white rounded shadow";
-    el.innerHTML = `
-      <p class="font-semibold mb-2">${i + 1}. ${q.text}</p>
-      <label class="block">
-        <input type="radio" name="q${i}" value="3" ${answers[i] === "3" ? "checked" : ""} onchange="answers[${i}] = '3'" class="mr-2">
-        매우 그렇다
-      </label>
-      <label class="block">
-        <input type="radio" name="q${i}" value="2" ${answers[i] === "2" ? "checked" : ""} onchange="answers[${i}] = '2'" class="mr-2">
-        다소 그렇다
-      </label>
-      <label class="block">
-        <input type="radio" name="q${i}" value="1" ${answers[i] === "1" ? "checked" : ""} onchange="answers[${i}] = '1'" class="mr-2">
-        다소 아니다
-      </label>
-      <label class="block">
-        <input type="radio" name="q${i}" value="0" ${answers[i] === "0" ? "checked" : ""} onchange="answers[${i}] = '0'" class="mr-2">
-        매우 아니다
-      </label>
-    `;
-    // Always keep background white (remove gray background logic)
+    const el = createQuestionFrame(i, q.text, answers[i]);
     el.style.backgroundColor = "#ffffff";
     container.appendChild(el);
   }

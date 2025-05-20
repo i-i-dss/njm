@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>철학 웹사이트</title>
+    <style>
+        /* Global Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        body {
+            background-color: #FFFFFF;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        
+        /* Frame Styles */
+        .frame {
+            background-color: #FFFFFF;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            width: 100%;
+            max-width: 800px;
+            position: relative;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .question-frame {
+            padding-top: 2rem;
+        }
+
+        .question-text {
+            font-size: 20px;
+
+        }
+
+        /* Ellipse Styles (Decorative circles) */
+        .ellipse-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 0.5rem;
+        }
+        
+        .ellipse {
+            border-radius: 50%;
+            background-color: #D9D9D9;
+        }
+
+        .ellipse-big {
+            width: 34px;
+            height: 34px;
+        }
+
+        .ellipse-small {
+            width: 24px;
+            height: 24px;
+        }
+
+        /* Next Button */
+        .next-button {
+            background-color: #FFFFFF;
+            border-radius: 50px;
+            padding: 0.8rem 2rem;
+            margin-top: 1rem;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+        }
+        
+        .next-button:hover {
+            transform: translateY(-2px);
+        }
+        
+        .next-text {
+            font-size: 25px;
+            line-height: 1.21em;
+        }
+    </style>
+</head>
+<body>
+    <div id="question-container"></div>
+    
+    <!-- Next Button -->
+    <div class="next-button">
+        <p class="next-text">다음 →</p>
+    </div>
+</body>
+<script src="questions.js"></script>
+<script src="philosophers.js"></script>
+<script src="hh.js"></script>
+<script src="dd.js"></script>              
+</html>
