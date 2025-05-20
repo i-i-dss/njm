@@ -1,20 +1,28 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const allEllipses = document.querySelectorAll(".ellipse");
+function createQuestionFrame(index, questionText, currentAnswer) {
+  const frame = document.createElement("div");
+  frame.className = "frame question-frame";
 
-  allEllipses.forEach(ellipse => {
-    ellipse.addEventListener("click", () => {
-      const label = ellipse.closest("label");
-      const input = label.querySelector("input[type='radio']");
-      const questionIndex = input.name.replace("q", "");
-      const value = input.value;
+  frame.innerHTML = `
+    <p class="question-text">${index + 1}. ${questionText}</p>
+    <div class="ellipse-wrapper">
+      <div class="ellipse ellipse-big" data-value="3"></div>
+      <div class="ellipse ellipse-small" data-value="2"></div>
+      <div class="ellipse ellipse-small" data-value="1"></div>
+      <div class="ellipse ellipse-big" data-value="0"></div>
+    </div>
+  `;
 
-      input.checked = true;
-      answers[questionIndex] = value;
-
-      const siblings = label.parentElement.querySelectorAll(".ellipse");
-      siblings.forEach(el => el.classList.remove("selected"));
-
-      ellipse.classList.add("selected");
+  const ellipses = frame.querySelectorAll(".ellipse");
+  ellipses.forEach(el => {
+    if (currentAnswer !== undefined && parseInt(el.dataset.value) === parseInt(currentAnswer)) {
+      el.classList.add("selected");
+    }
+    el.addEventListener("click", () => {
+      ellipses.forEach(e => e.classList.remove("selected"));
+      el.classList.add("selected");
+      answers[index] = el.dataset.value;
     });
   });
-});
+
+  return frame;
+}
