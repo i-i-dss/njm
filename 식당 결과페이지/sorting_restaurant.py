@@ -1,10 +1,11 @@
+
 import os
 import json
 import re
 import math
 import requests
 from pathlib import Path
-from merging_restautant import load_and_merge_json
+from merging_restaurant import load_and_merge_json
 from config import top_CATEGORIES as TOP_CATEGORIES, subcategory_ALIASES as SUBCATEGORY_ALIASES, subcategory_WEIGHTS as DEFAULT_WEIGHTS, prefs, current_address
 from typing import Tuple, Optional
 
@@ -68,19 +69,29 @@ def load_merged_data(data):
             'raw_categories': []
         }
         raw_set = set()
+
         for lst in info.values():
             if isinstance(lst, list):
                 for item in lst:
-                    cat = item.get('data', {}).get('category', '') or ''
-                    raw_set.update([p.strip() for p in cat.split(',') if p.strip()])
+                    data_obj = item.get('data')
+                    if isinstance(data_obj, list):
+                        continue  # catchtable에는 카테고리 없음
+                    elif isinstance(data_obj, dict):
+                        cat = data_obj.get('category', '') or ''
+                        raw_set.update([p.strip() for p in cat.split(',') if p.strip()])
+
         rest['raw_categories'] = sorted(raw_set)
-        # top_category
+
+        # top_category 추출
         tc = '기타'
         for detail in rest['raw_categories']:
             part = detail.lower()
             for cat, kws in TOP_CATEGORIES.items():
-                if any(kw in part for kw in kws): tc = cat; break
-            if tc != '기타': break
+                if any(kw in part for kw in kws):
+                    tc = cat
+                    break
+            if tc != '기타':
+                break
         rest['top_category'] = tc
         restaurants.append(rest)
     return restaurants
@@ -123,54 +134,60 @@ def recommend_by_review_count(restaurants, top_n=10):
     for r in restaurants: r['weighted_score'] = compute_weighted_score(r)
     lst = sorted(restaurants, key=lambda x: x['weighted_score'], reverse=True)
     print(f"\n🏆 리뷰 순 추천 (가중치) 상위 {top_n}개")
-    for i, r in enumerate(lst[:top_n],1): print(f"{i}. {r['name']} ({r['total_reviews']}) - ⭐{r['rating']} [{r['top_category']}] {r.get('address')} (점수:{r['weighted_score']:.1f})")
+    for i, r in enumerate(lst[:top_n],1):
+        print(f"{i}. {r['name']} ({r['total_reviews']}) - ⭐{r['rating']} [{r['top_category']}] {r.get('address')} (점수:{r['weighted_score']:.1f})")
     sel = int(input(f"\n번호 선택 (1-{top_n},0:건너뜀): ") or 0)
     if sel>0: increase_weights(lst[sel-1])
 
 def recommend_by_top_category(restaurants, top_n=5):
-    cats=list(TOP_CATEGORIES.keys())
+    cats = list(TOP_CATEGORIES.keys())
     print('\n📂 상위 카테고리')
-    for i,cat in enumerate(cats,1): print(f"{i}. {cat}")
-    sel=int(input(f"\n번호 선택(1-{len(cats)}): ") or 0)
+    for i, cat in enumerate(cats, 1): print(f"{i}. {cat}")
+    sel = int(input(f"\n번호 선택(1-{len(cats)}): ") or 0)
     if sel<1 or sel>len(cats): return
-    chosen=cats[sel-1]
-    subset=[r for r in restaurants if r['top_category']==chosen]
-    for r in subset: r['weighted_score']=compute_weighted_score(r)
-    lst=sorted(subset, key=lambda x: x['weighted_score'], reverse=True)
+    chosen = cats[sel-1]
+    subset = [r for r in restaurants if r['top_category'] == chosen]
+    for r in subset: r['weighted_score'] = compute_weighted_score(r)
+    lst = sorted(subset, key=lambda x: x['weighted_score'], reverse=True)
     print(f"\n🍽️ '{chosen}' 추천 상위 {top_n}개")
-    for i,r in enumerate(lst[:top_n],1): print(f"{i}. {r['name']} ({r['total_reviews']}) - ⭐{r['rating']} {r.get('address')} (점수:{r['weighted_score']:.1f})")
-    sel2=int(input(f"\n번호 선택(1-{top_n},0:건너뜀): ") or 0)
+    for i, r in enumerate(lst[:top_n],1):
+        print(f"{i}. {r['name']} ({r['total_reviews']}) - ⭐{r['rating']} {r.get('address')} (점수:{r['weighted_score']:.1f})")
+    sel2 = int(input(f"\n번호 선택(1-{top_n},0:건너뜀): ") or 0)
     if sel2>0: increase_weights(lst[sel2-1])
 
 # 거리순 추천
 def recommend_by_distance(restaurants):
-    user_addr=current_address
-    user_coord=geocode_kakao(user_addr)
-    if not user_coord: print('주소 변환 실패'); return
-    lst=sort_by_distance(restaurants, user_coord)
+    user_addr = current_address
+    user_coord = geocode_kakao(user_addr)
+    if not user_coord:
+        print('주소 변환 실패')
+        return
+    lst = sort_by_distance(restaurants, user_coord)
     print('\n📍 거리순 추천 목록')
-    for i,r in enumerate(lst,1): print(f"{i}. {r['name']} - {r.get('address')} ({r['distance_m']:.1f}m)")
+    for i, r in enumerate(lst,1):
+        print(f"{i}. {r['name']} - {r.get('address')} ({r['distance_m']:.1f}m)")
 
 # 통계
 def show_statistics(restaurants):
-    total=len(restaurants)
-    avg=sum(r['rating'] for r in restaurants if r['rating']>0)/max(len([r for r in restaurants if r['rating']>0]),1)
-    totrev=sum(r['total_reviews'] for r in restaurants)
+    total = len(restaurants)
+    avg = sum(r['rating'] for r in restaurants if r['rating'] > 0) / max(len([r for r in restaurants if r['rating'] > 0]),1)
+    totrev = sum(r['total_reviews'] for r in restaurants)
     print(f"\n📊 총:{total}, 평균평점:{avg:.2f}, 리뷰합:{totrev}")
 
 # 메인
 def main():
-    data=load_and_merge_json('reviews_NM.json','reviews_ct.json','reviews_KM.json')
-    restaurants=load_merged_data(data)
+    data = load_and_merge_json('reviews_NM.json','reviews_ct.json','reviews_KM.json')
+    restaurants = load_merged_data(data)
     print(f"✅ {len(restaurants)}개 로드 완료!")
     while True:
         print("\n1. 리뷰순 | 2. 카테고리별 | 3. 거리순 | 4. 통계 | 5. 종료")
-        cmd=input('선택> ').strip()
-        if cmd=='1': recommend_by_review_count(restaurants,int(input('몇개?') or 10))
-        elif cmd=='2': recommend_by_top_category(restaurants,int(input('몇개?') or 5))
-        elif cmd=='3': recommend_by_distance(restaurants)
-        elif cmd=='4': show_statistics(restaurants)
-        elif cmd=='5': break
+        cmd = input('선택> ').strip()
+        if cmd == '1': recommend_by_review_count(restaurants, int(input('몇개?') or 10))
+        elif cmd == '2': recommend_by_top_category(restaurants, int(input('몇개?') or 5))
+        elif cmd == '3': recommend_by_distance(restaurants)
+        elif cmd == '4': show_statistics(restaurants)
+        elif cmd == '5': break
         else: print('❌ 1-5 중 입력')
 
-if __name__=='__main__': main()
+if __name__ == '__main__':
+    main()
