@@ -15,9 +15,7 @@ with open("result.html", "w", encoding="utf-8") as out:
     <link rel="stylesheet" href="results.css">
 </head>
 <body>
-    <div class="main-frame">
-        <!-- 상단 헤더 -->
-        <div class="banner"></div>
+    <div class="banner"></div>
 
         <!-- 네비게이션 버튼들 -->
         <button class="category category-1" onclick="handleNavigation(1)" aria-label="네비게이션 버튼 1">
