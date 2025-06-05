@@ -16,20 +16,14 @@ body {
     overflow-x: hidden;
 }
 
-.main-frame {
-    width: 1920px;
-    height: 1080px;
-    position: relative;
-    margin: 0 auto;
-    background-color: #FFFFFF;
-}
+
 
 /* 상단 헤더 - Rectangle 3 */
 .banner{
     position: absolute;
     left: 0;
     top: 0;
-    width: 1920px;
+    width: 100vw;
     height: 110px;
     background-color: #D88282;
 }
